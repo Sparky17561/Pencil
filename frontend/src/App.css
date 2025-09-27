@@ -1,0 +1,95 @@
+/* frontend/src/App.css */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Ensure full height for html and body */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* React Flow Custom Styles */
+.react-flow__node-custom {
+  background: transparent;
+  border: none;
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: #6B7280;
+  border: 2px solid #ffffff;
+}
+
+.react-flow__handle.react-flow__handle-top {
+  top: -4px;
+}
+
+.react-flow__handle.react-flow__handle-bottom {
+  bottom: -4px;
+}
+
+.react-flow__edge-path {
+  stroke: #6B7280;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #3B82F6;
+  stroke-width: 3;
+}
+
+.react-flow__controls {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+}
+
+.react-flow__controls-button {
+  background: white;
+  border-bottom: 1px solid #E5E7EB;
+  color: #6B7280;
+}
+
+.react-flow__controls-button:hover {
+  background: #F9FAFB;
+  color: #374151;
+}
+
+.react-flow__minimap {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+}
+
+/* Custom scrollbar for sidebar */
+.overflow-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: #F3F4F6;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 2px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Animation for smooth transitions */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Fix for React Flow container */
+.react-flow {
+  width: 100%;
+  height: 100%;
+}
