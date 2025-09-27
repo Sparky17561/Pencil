@@ -1,4 +1,4 @@
-# FlowLang Eraser - AI-Powered Diagram Generator
+# Pencil - AI-Powered Diagram Generator
 
 A complete Eraser clone that allows users to create flowcharts and diagrams using AI with a custom FlowLang language. Built with Django backend and React frontend.
 
