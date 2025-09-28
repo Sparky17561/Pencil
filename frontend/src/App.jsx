@@ -14,7 +14,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { Hand, MousePointer, HelpCircle, X, AlignLeft } from 'lucide-react';
+import { Hand, MousePointer, HelpCircle, X, AlignLeft, Download, Sync } from 'lucide-react';
 import CustomNode from './components/CustomNode';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -423,7 +423,7 @@ function App() {
     }
   }, [nodes.length, edges.length]);
 
-  // ---- GENERATE DIAGRAM FUNCTION (from old code) ----
+  // ---- GENERATE DIAGRAM FUNCTION ----
   const handleGenerateDiagram = async (prompt, apiKey, model) => {
     setIsLoading(true);
     debugLog('Generating diagram...', { prompt, model });
@@ -658,7 +658,7 @@ function App() {
               />
 
               {/* Enhanced Toolbar Panel */}
-              <Panel position="top-left" style={{ top: '180px', left: '20px' }}>
+              <Panel position="top-left" style={{ top: '20px', left: '20px' }}>
                 <div className="flex flex-col gap-3">
                   <NodeToolbar onAddNode={addNode} onClearCanvas={clearCanvas} />
                   
@@ -718,46 +718,63 @@ function App() {
                 </Panel>
               )}
 
-              {/* Enhanced Export Panel */}
-              <Panel position="top-right" style={{ top: '120px', right: '20px' }}>
-                <ExportMenu
-                  reactFlowWrapper={reactFlowWrapper}
-                  nodes={nodes}
-                  edges={edges}
-                  diagramTitle={diagramTitle}
-                  reactFlowInstance={reactFlowInstance}
-                />
-              </Panel>
-
-              {/* Enhanced Shortcuts Helper */}
+              {/* Enhanced Bottom Panel with Export and Sync */}
               <Panel position="bottom-center">
-                <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-gray-200/70 text-xs text-gray-600 transition-all duration-300">
+                <div className="bg-white/90 backdrop-blur-sm px-4 py-3 rounded-xl shadow-lg border border-gray-200/70 transition-all duration-300">
                   <div className="flex items-center gap-4">
-                    <div className="font-medium text-gray-700">Shortcuts:</div>
-                    <div className="flex gap-3">
-                      <span><kbd className="bg-gray-100 px-1.5 py-0.5 rounded text-xs border border-gray-200">S</kbd> Pan/Select</span>
-                      <span><kbd className="bg-gray-100 px-1.5 py-0.5 rounded text-xs border border-gray-200">Ctrl/Cmd+C</kbd> Copy</span>
-                      <span><kbd className="bg-gray-100 px-1.5 py-0.5 rounded text-xs border border-gray-200">Ctrl/Cmd+V</kbd> Paste</span>
-                      <span><kbd className="bg-gray-100 px-1.5 py-0.5 rounded text-xs border border-gray-200">Del</kbd> Delete</span>
-                      <span><kbd className="bg-gray-100 px-1.5 py-0.5 rounded text-xs border border-gray-200">Ctrl/Cmd+A</kbd> Align</span>
+                    {/* Export Button */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => document.querySelector('.export-menu-trigger')?.click()}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 transition-all duration-200"
+                        title="Export diagram"
+                      >
+                        <Download size={16} />
+                        <span className="text-sm font-medium">Export</span>
+                      </button>
+                    </div>
+
+                    {/* Sync Status */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleManualSync}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 transition-all duration-200"
+                        title="Manual sync"
+                      >
+                        <Sync size={16} className={autoSync ? "animate-spin" : ""} />
+                        <span className="text-sm font-medium">
+                          {autoSync ? "Auto Sync" : "Manual Sync"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Nodes:</span>
+                        <span className="bg-gray-100 px-2 py-1 rounded">{nodes.length}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Edges:</span>
+                        <span className="bg-gray-100 px-2 py-1 rounded">{edges.length}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </Panel>
 
-              {/* Enhanced Debug Panel */}
-              {process.env.NODE_ENV === 'development' && (
-                <Panel position="bottom-left">
-                  <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-lg max-w-xs backdrop-blur-sm border border-gray-600/50">
-                    <div className="font-medium mb-1">Debug Info</div>
-                    <div>Nodes: {nodes.length}</div>
-                    <div>Edges: {edges.length}</div>
-                    <div>Mode: {panOnDrag ? 'Pan' : 'Select'}</div>
-                    <div>User: {user ? 'Signed In' : 'Not Signed In'}</div>
-                    <div>Selection: {nodes.some(n => n.selected) ? `${nodes.filter(n => n.selected).length} node(s)` : edges.some(e => e.selected) ? `${edges.filter(e => e.selected).length} edge(s)` : 'None'}</div>
-                  </div>
-                </Panel>
-              )}
+              {/* Export Panel (hidden trigger) */}
+              <Panel position="top-right" style={{ top: '120px', right: '20px' }}>
+                <div className="export-menu-trigger" style={{ display: 'none' }}>
+                  <ExportMenu
+                    reactFlowWrapper={reactFlowWrapper}
+                    nodes={nodes}
+                    edges={edges}
+                    diagramTitle={diagramTitle}
+                    reactFlowInstance={reactFlowInstance}
+                  />
+                </div>
+              </Panel>
             </ReactFlow>
 
             {/* Enhanced Loading Overlay */}
@@ -775,7 +792,7 @@ function App() {
         {/* Right Sidebar */}
         <div style={{ width: '384px' }}>
           <Sidebar
-            onGenerateDiagram={handleGenerateDiagram} // Added this prop
+            onGenerateDiagram={handleGenerateDiagram}
             onCodeUpdate={handleCodeUpdate}
             isLoading={isLoading}
             currentCode={currentFlowLangCode}
