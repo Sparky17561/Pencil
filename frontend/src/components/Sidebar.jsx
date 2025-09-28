@@ -88,7 +88,7 @@ const Sidebar = ({
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-bold text-gray-900">FlowLang Designer</h1>
+          <h1 className="text-xl font-bold text-gray-900">AI Designer</h1>
         </div>
         <p className="text-sm text-gray-600">Create diagrams with AI assistance</p>
         
@@ -157,7 +157,7 @@ const Sidebar = ({
             {/* API Key Section */}
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-900">
-                API Key
+                Groq API Key
               </label>
               <input
                 type="password"
@@ -167,7 +167,7 @@ const Sidebar = ({
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
               />
               <p className="text-xs text-gray-600">
-                Secure API authentication required for AI generation
+                Secure API authentication required for AI generation. Visit <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Groq</a> to get your API key.
               </p>
             </div>
 

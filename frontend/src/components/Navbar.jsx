@@ -64,7 +64,7 @@ const Navbar = ({ user }) => {
                 <h1 className={`text-2xl font-bold text-white transition-all duration-700 tracking-tight ${
                   animateTitle ? 'translate-x-0 opacity-100' : 'translate-x-6 opacity-0'
                 } group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:via-purple-400 group-hover:to-pink-400`}>
-                  Pencil
+                  PencilAI
                 </h1>
                 <p className="text-xs text-gray-300 font-medium -mt-1 tracking-wide group-hover:text-gray-200 transition-colors duration-300">
                   Flow Designer
