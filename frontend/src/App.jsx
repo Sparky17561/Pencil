@@ -16,7 +16,7 @@ import 'reactflow/dist/style.css';
 
 import * as LucideIcons from 'lucide-react';
 
-const { Hand, MousePointer, HelpCircle, X, AlignLeft, Download, Sync } = LucideIcons;
+const { Hand, MousePointer, HelpCircle, X, AlignLeft, Download, RefreshCw } = LucideIcons;
 import CustomNode from './components/CustomNode';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -398,7 +398,7 @@ function App() {
 
     try {
       debugLog('Syncing diagram...');
-      const response = await fetch('${BASE_URL}/api/sync-diagram/', {
+      const response = await fetch(`${BASE_URL}/api/sync-diagram/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nodes, edges, diagram_title: diagramTitle || 'My Diagram' }),
@@ -433,7 +433,7 @@ function App() {
     setIsLoading(true);
     debugLog('Generating diagram...', { prompt, model });
     try {
-      const generateResponse = await fetch('${BASE_URL}/api/generate-flowlang/', {
+      const generateResponse = await fetch(`${BASE_URL}/api/generate-flowlang/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, api_key: apiKey, model })
@@ -441,7 +441,7 @@ function App() {
       const generateData = await generateResponse.json();
       if (!generateData.success) throw new Error(generateData.error);
 
-      const parseResponse = await fetch('${BASE_URL}/api/parse-flowlang/', {
+      const parseResponse = await fetch(`${BASE_URL}/api/parse-flowlang/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ flowlang_code: generateData.flowlang_code })
@@ -468,7 +468,7 @@ function App() {
     debugLog('Updating code...');
     try {
       setAutoSync(false);
-      const parseResponse = await fetch('${BASE_URL}/api/parse-flowlang/', {
+      const parseResponse = await fetch(`${BASE_URL}/api/parse-flowlang/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ flowlang_code: flowlangCode })
@@ -746,7 +746,7 @@ function App() {
                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 transition-all duration-200"
                         title="Manual sync"
                       >
-                        <Sync size={16} className={autoSync ? "animate-spin" : ""} />
+                        <RefreshCw size={16} className={autoSync ? "animate-spin" : ""} />
                         <span className="text-sm font-medium">
                           {autoSync ? "Auto Sync" : "Manual Sync"}
                         </span>

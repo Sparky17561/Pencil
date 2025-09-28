@@ -9,7 +9,6 @@ import {
   useAuth,
 } from '@clerk/clerk-react';
 
-import Landing from './Landing';
 import App from './App';
 import './index.css';
 
@@ -115,12 +114,15 @@ const ClerkWithRouter = ({ children }) => {
       navigate={clerkNavigate}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
     >
       {children}
     </ClerkProvider>
   );
 };
 
+// Protected Route Component that redirects to sign-in if not authenticated
 const ProtectedRoute = ({ children }) => {
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -144,7 +146,15 @@ function RootRoutes() {
     <BrowserRouter>
       <ClerkWithRouter>
         <Routes>
-          <Route path="/" element={<Landing />} />
+          {/* Root route - protected, renders the App component */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <App />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Fullscreen SignIn */}
           <Route
@@ -198,15 +208,10 @@ function RootRoutes() {
             }
           />
 
-          <Route
-            path="/app"
-            element={
-              <ProtectedRoute>
-                <App />
-              </ProtectedRoute>
-            }
-          />
+          {/* Redirect /app to root for backward compatibility */}
+          <Route path="/app" element={<Navigate to="/" replace />} />
 
+          {/* Catch all other routes and redirect to root */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ClerkWithRouter>

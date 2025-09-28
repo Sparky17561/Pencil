@@ -12,7 +12,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
-import NodeToolbar from './NodeToolBar';
+import NodeToolbar from './NodeToolbar';
 import NodeEditPanel from './NodeEditPanel';
 import ExportMenu from './ExportMenu';
 
