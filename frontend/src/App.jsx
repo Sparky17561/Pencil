@@ -14,7 +14,9 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { Hand, MousePointer, HelpCircle, X, AlignLeft, Download, Sync } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+
+const { Hand, MousePointer, HelpCircle, X, AlignLeft, Download, Sync } = LucideIcons;
 import CustomNode from './components/CustomNode';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
