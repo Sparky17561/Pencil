@@ -1,55 +1,66 @@
-// frontend/src/components/Navbar.jsx
+// components/Navbar.jsx
 import React from 'react';
-import { UserButton, useUser } from '@clerk/clerk-react';
-import { Edit } from 'lucide-react';
+import { UserButton } from '@clerk/clerk-react';
 
-const Navbar = () => {
-  const { user, isLoaded } = useUser();
+const Navbar = ({ user }) => {
+  // Debug logging
+  const debugLog = (message, data = null) => {
+    console.log(`[Navbar Debug] ${message}`, data || '');
+  };
+
+  // Log user state
+  React.useEffect(() => {
+    debugLog('User state in navbar:', {
+      hasUser: !!user,
+      userId: user?.id,
+      fullName: user?.fullName,
+      firstName: user?.firstName,
+      lastName: user?.lastName,
+      username: user?.username,
+      email: user?.primaryEmailAddress?.emailAddress,
+      imageUrl: user?.imageUrl
+    });
+  }, [user]);
 
   return (
-    <nav className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
-      {/* Left Side - Brand */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
-          <Edit size={20} className="text-white" />
-        </div>
-        <h1 className="text-xl font-bold text-gray-800">Pencil</h1>
-      </div>
-
-      {/* Right Side - User Profile */}
-      <div className="flex items-center gap-4">
-        {isLoaded && user && (
-          <>
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-700">
-                {user.fullName || user.firstName || 'User'}
-              </p>
-              <p className="text-xs text-gray-500">
-                {user.primaryEmailAddress?.emailAddress}
-              </p>
-            </div>
-            <UserButton 
-              appearance={{
-                elements: {
-                  avatarBox: "w-10 h-10",
-                  userButtonPopoverCard: "shadow-lg border",
-                  userButtonPopoverActionButton: "hover:bg-gray-50"
-                }
-              }}
-              showName={false}
-              userProfileMode="navigation"
-              userProfileUrl="/user-profile"
-            />
-          </>
-        )}
-        
-        {isLoaded && !user && (
-          <div className="text-sm text-gray-500">
-            Loading...
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => window.location.assign('/')}
+              className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-sky-600 hover:from-teal-600 hover:to-sky-700 transition-all"
+            >
+              Pencil
+            </button>
           </div>
-        )}
+
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                
+                <div className="border-l border-gray-200 pl-4">
+                  <UserButton 
+                    afterSignOutUrl="/sign-in"
+                    appearance={{
+                      elements: {
+                        userButtonAvatarBox: "w-8 h-8",
+                        userButtonPopoverCard: "shadow-lg border border-gray-200",
+                        userButtonPopoverActionButton: "hover:bg-gray-50"
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-500">
+                Not signed in
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </nav>
+    </header>
   );
 };
 

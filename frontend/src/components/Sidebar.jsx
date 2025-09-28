@@ -1,6 +1,6 @@
 // frontend/src/components/Sidebar.jsx
 import React, { useState, useEffect } from 'react';
-import { Settings, Play, Code, MessageSquare, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Play, Code, MessageSquare, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 const Sidebar = ({ 
   onGenerateDiagram, 
@@ -85,112 +85,104 @@ const Sidebar = ({
 
   return (
     <div className="w-96 bg-white border-l border-gray-200 flex flex-col h-full">
-      {/* Header with Sync Controls */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold text-gray-800">FlowLang Designer</h1>
-          <div className="flex items-center space-x-2">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-xl font-bold text-gray-900">FlowLang Designer</h1>
+        </div>
+        <p className="text-sm text-gray-600">Create diagrams with AI assistance</p>
+        
+        {/* Auto-sync Controls */}
+        <div className="mt-4 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-sm">
+              {autoSync ? (
+                <div className="flex items-center text-indigo-700">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full mr-2 animate-pulse"></div>
+                  <span className="font-medium">Auto-sync active</span>
+                </div>
+              ) : (
+                <div className="flex items-center text-gray-600">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
+                  <span className="font-medium">Manual sync mode</span>
+                </div>
+              )}
+            </div>
             <button
               onClick={onToggleAutoSync}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-all duration-200 ${
                 autoSync 
-                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                  ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' 
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
-              title={autoSync ? 'Auto-sync enabled' : 'Auto-sync disabled'}
+              title={autoSync ? 'Disable auto-sync' : 'Enable auto-sync'}
             >
-              <RefreshCw size={16} className={autoSync ? 'animate-spin' : ''} />
-            </button>
-            <button
-              onClick={onManualSync}
-              className="p-1.5 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-              title="Manual sync"
-            >
-              <Settings size={16} />
+              <RefreshCw size={14} className={autoSync ? 'animate-spin' : ''} />
             </button>
           </div>
         </div>
-        
-        <div className="flex items-center text-sm">
-          {autoSync ? (
-            <div className="flex items-center text-green-600">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-              Auto-sync active
-            </div>
-          ) : (
-            <div className="flex items-center text-gray-500">
-              <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
-              Manual sync mode
-            </div>
-          )}
-        </div>
-        
-        <p className="text-sm text-gray-600 mt-1">Create diagrams with AI</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex bg-gray-100 border-b border-gray-200 p-1 mx-4 rounded-lg">
         <button
           onClick={() => setActiveTab('AI')}
-          className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
+          className={`flex-1 px-8 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 rounded-md mx-1 ${
             activeTab === 'AI' 
-              ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' 
-              : 'text-gray-600 hover:text-gray-800'
+              ? 'bg-white text-blue-600 shadow-sm' 
+              : 'bg-gray-600 text-white hover:bg-gray-700'
           }`}
         >
           <MessageSquare size={16} />
-          AI
+          AI Generator
         </button>
         <button
           onClick={() => setActiveTab('Code')}
-          className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
+          className={`flex-1 px-8 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 rounded-md mx-1 ${
             activeTab === 'Code' 
-              ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' 
-              : 'text-gray-600 hover:text-gray-800'
+              ? 'bg-white text-blue-600 shadow-sm' 
+              : 'bg-gray-600 text-white hover:bg-gray-700'
           }`}
         >
           <Code size={16} />
-          Code
-          {currentCode && <div className="w-2 h-2 bg-blue-400 rounded-full"></div>}
+          Code Editor
+          {currentCode && <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>}
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-white">
         {activeTab === 'AI' && (
-          <div className="p-4 space-y-4">
+          <div className="p-5 space-y-6">
             {/* API Key Section */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                GROQ Cloud API Key
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-900">
+                API Key
               </label>
               <input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter your GROQ API key"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your API key here..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Get your API key from{' '}
-                <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                  console.groq.com
-                </a>
+              <p className="text-xs text-gray-600">
+                Secure API authentication required for AI generation
               </p>
             </div>
 
             {/* Model Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Model
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-900">
+                AI Model
               </label>
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-gray-900"
               >
                 {models.map((m) => (
-                  <option key={m.value} value={m.value}>
+                  <option key={m.value} value={m.value} className="text-gray-900 bg-white">
                     {m.label}
                   </option>
                 ))}
@@ -198,18 +190,18 @@ const Sidebar = ({
             </div>
 
             {/* User Prompt */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Describe your diagram
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-900">
+                Diagram Description
               </label>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe the process, workflow, or system you want to visualize..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-32 resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 h-32 resize-none"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Example: "Create a user authentication flow with login, validation, and dashboard access"
+              <p className="text-xs text-gray-600">
+                Be specific about the steps, decisions, and connections you want to include
               </p>
             </div>
 
@@ -217,42 +209,42 @@ const Sidebar = ({
             <button
               onClick={handleGenerate}
               disabled={isLoading || !prompt.trim() || !apiKey.trim()}
-              className={`w-full px-4 py-3 rounded-md font-medium flex items-center justify-center gap-2 transition-colors ${
+              className={`w-full px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all duration-200 ${
                 isLoading || !prompt.trim() || !apiKey.trim()
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
               }`}
             >
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Generating...
+                  <span className="text-white">Generating Diagram...</span>
                 </>
               ) : (
                 <>
                   <Play size={16} />
-                  Generate Diagram
+                  <span>Generate Diagram</span>
                 </>
               )}
             </button>
 
-            {/* Current Code Preview (when on AI tab) */}
+            {/* Current Code Preview */}
             {currentCode && (
-              <div className="mt-6 border-t border-gray-200 pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Current FlowLang Code</h3>
+              <div className="mt-6 border-t border-gray-200 pt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900">Current Code</h3>
                   <button
                     onClick={() => setShowCodePreview(!showCodePreview)}
-                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors font-medium bg-white border border-blue-200"
                   >
-                    {showCodePreview ? <EyeOff size={14} className="mr-1" /> : <Eye size={14} className="mr-1" />}
-                    {showCodePreview ? 'Hide' : 'Show'}
+                    {showCodePreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                    <span>{showCodePreview ? 'Hide' : 'Show'}</span>
                   </button>
                 </div>
                 
                 {showCodePreview && (
-                  <div className="bg-gray-50 rounded-md p-3">
-                    <pre className="text-xs text-gray-700 font-mono whitespace-pre-wrap overflow-x-auto max-h-32">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <pre className="text-xs text-gray-800 font-mono whitespace-pre-wrap overflow-x-auto max-h-32 leading-relaxed">
                       {currentCode}
                     </pre>
                   </div>
@@ -261,19 +253,19 @@ const Sidebar = ({
             )}
 
             {/* Example Prompts */}
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Example Prompts:</h3>
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">Quick Examples</h3>
               <div className="space-y-2">
                 {[
                   "Create an e-commerce order processing workflow",
-                  "Design a machine learning pipeline for data processing",
+                  "Design a machine learning pipeline for data processing", 
                   "Show a software development lifecycle process",
                   "Create a customer support ticket resolution flow"
                 ].map((example, index) => (
                   <button
                     key={index}
                     onClick={() => setPrompt(example)}
-                    className="w-full text-left px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-md transition-colors"
+                    className="w-full text-left px-4 py-3 text-sm bg-gray-50 hover:bg-blue-50 hover:text-blue-800 rounded-lg transition-all duration-200 border border-gray-200 hover:border-blue-300 text-gray-800"
                   >
                     {example}
                   </button>
@@ -284,15 +276,15 @@ const Sidebar = ({
         )}
 
         {activeTab === 'Code' && (
-          <div className="p-4 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">
-                FlowLang Code Editor
+          <div className="p-5 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-sm font-semibold text-gray-900">
+                Code Editor
               </label>
               <div className="flex space-x-2">
                 <button
                   onClick={copyToClipboard}
-                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600"
+                  className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 border border-gray-300 transition-colors font-medium"
                   disabled={!editableCode}
                 >
                   Copy
@@ -300,7 +292,7 @@ const Sidebar = ({
                 <button
                   onClick={resetCode}
                   disabled={editableCode === currentCode}
-                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   Reset
                 </button>
@@ -311,20 +303,20 @@ const Sidebar = ({
               value={editableCode}
               onChange={handleCodeChange}
               placeholder="FlowLang code will appear here after generation..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm resize-none"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none bg-white text-gray-900 placeholder-gray-500 transition-all duration-200"
             />
             
-            <div className="mt-3 space-y-2">
+            <div className="mt-4 space-y-3">
               <button
                 onClick={handleCodeSubmit}
                 disabled={!editableCode.trim() || editableCode === currentCode}
-                className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl disabled:shadow-none"
               >
                 Update Diagram
               </button>
               
-              <div className="text-xs text-gray-500 text-center">
-                {autoSync ? 'Manual changes sync automatically' : 'Click "Update Diagram" to apply changes'}
+              <div className="text-xs text-gray-600 text-center bg-gray-50 py-2 px-3 rounded-lg border border-gray-200">
+                {autoSync ? 'Changes sync automatically when auto-sync is enabled' : 'Click "Update Diagram" to apply your changes'}
               </div>
             </div>
           </div>

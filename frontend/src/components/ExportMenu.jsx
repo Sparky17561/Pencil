@@ -12,108 +12,13 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
     if (!reactFlowWrapper.current || !reactFlowInstance) return;
     
     try {
+      // Store original viewport
+      const originalViewport = reactFlowInstance.getViewport();
+      
       // Get the React Flow viewport element
       const viewport = reactFlowWrapper.current.querySelector('.react-flow__viewport');
       if (!viewport) return;
 
-      // Hide UI elements but keep the background
-      const elementsToHide = [
-        '.react-flow__controls',
-        '.react-flow__minimap', 
-        '.react-flow__panel'
-      ];
-      
-      const hiddenElements = [];
-      elementsToHide.forEach(selector => {
-        const elements = reactFlowWrapper.current.querySelectorAll(selector);
-        elements.forEach(el => {
-          hiddenElements.push({ element: el, display: el.style.display });
-          el.style.display = 'none';
-        });
-      });
-
-      // Temporarily change background to white
-      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
-      const originalBg = reactFlowElement.style.background;
-      reactFlowElement.style.background = 'white';
-
-      // Remove the dotted background pattern
-      const background = reactFlowWrapper.current.querySelector('.react-flow__background');
-      const originalBackgroundDisplay = background ? background.style.display : '';
-      if (background) {
-        background.style.display = 'none';
-      }
-
-      // Get bounds and fit view to show all nodes
-      if (nodes.length > 0) {
-        const nodesBounds = getNodesBounds(nodes);
-        const { x, y, zoom } = getViewportForBounds(
-          nodesBounds,
-          reactFlowInstance.getViewport().zoom,
-          reactFlowInstance.getViewport().x,
-          reactFlowInstance.getViewport().y,
-          100 // padding
-        );
-        reactFlowInstance.setViewport({ x, y, zoom });
-        
-        // Wait for viewport to update
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      const canvas = await html2canvas(reactFlowWrapper.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        onclone: (clonedDoc) => {
-          // Ensure white background in cloned document
-          const clonedReactFlow = clonedDoc.querySelector('.react-flow');
-          if (clonedReactFlow) {
-            clonedReactFlow.style.background = 'white';
-          }
-          
-          // Remove background pattern in clone
-          const clonedBackground = clonedDoc.querySelector('.react-flow__background');
-          if (clonedBackground) {
-            clonedBackground.style.display = 'none';
-          }
-        }
-      });
-      
-      const link = document.createElement('a');
-      link.download = `${diagramTitle || 'diagram'}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      
-    } catch (error) {
-      console.error('Error exporting PNG:', error);
-      alert('Error exporting PNG. Please try again.');
-    } finally {
-      // Restore all hidden elements
-      hiddenElements.forEach(({ element, display }) => {
-        element.style.display = display;
-      });
-
-      // Restore original background
-      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
-      if (reactFlowElement) {
-        reactFlowElement.style.background = originalBg;
-      }
-
-      // Restore background pattern
-      const background = reactFlowWrapper.current.querySelector('.react-flow__background');
-      if (background) {
-        background.style.display = originalBackgroundDisplay;
-      }
-    }
-    setIsOpen(false);
-  };
-
-  const exportAsPDF = async () => {
-    if (!reactFlowWrapper.current || !reactFlowInstance) return;
-    
-    try {
       // Hide UI elements
       const elementsToHide = [
         '.react-flow__controls',
@@ -130,13 +35,132 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
         });
       });
 
-      // Set white background and remove pattern
+      // Store original styles
       const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
       const originalBg = reactFlowElement.style.background;
-      reactFlowElement.style.background = 'white';
-
       const background = reactFlowWrapper.current.querySelector('.react-flow__background');
       const originalBackgroundDisplay = background ? background.style.display : '';
+
+      // Set white background and remove pattern
+      reactFlowElement.style.background = 'white';
+      if (background) {
+        background.style.display = 'none';
+      }
+
+      // Fit view to show all nodes with proper bounds
+      if (nodes.length > 0) {
+        const nodesBounds = getNodesBounds(nodes);
+        const padding = 50;
+        const { x, y, zoom } = getViewportForBounds(
+          {
+            x: nodesBounds.x - padding,
+            y: nodesBounds.y - padding,
+            width: nodesBounds.width + padding * 2,
+            height: nodesBounds.height + padding * 2
+          },
+          reactFlowWrapper.current.offsetWidth,
+          reactFlowWrapper.current.offsetHeight,
+          0.5, // min zoom
+          2    // max zoom
+        );
+        
+        reactFlowInstance.setViewport({ x, y, zoom }, { duration: 0 });
+        
+        // Wait for viewport to update
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      // Capture with high quality
+      const canvas = await html2canvas(reactFlowWrapper.current, {
+        backgroundColor: '#ffffff',
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: reactFlowWrapper.current.offsetWidth,
+        height: reactFlowWrapper.current.offsetHeight,
+        onclone: (clonedDoc) => {
+          const clonedReactFlow = clonedDoc.querySelector('.react-flow');
+          if (clonedReactFlow) {
+            clonedReactFlow.style.background = 'white';
+          }
+          const clonedBackground = clonedDoc.querySelector('.react-flow__background');
+          if (clonedBackground) {
+            clonedBackground.style.display = 'none';
+          }
+        }
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${diagramTitle || 'diagram'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      // Restore original viewport
+      reactFlowInstance.setViewport(originalViewport, { duration: 0 });
+      
+    } catch (error) {
+      console.error('Error exporting PNG:', error);
+      alert('Error exporting PNG. Please try again.');
+    } finally {
+      // Restore all elements and styles
+      const hiddenElements = [];
+      const elementsToHide = [
+        '.react-flow__controls',
+        '.react-flow__minimap', 
+        '.react-flow__panel'
+      ];
+      
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => {
+          el.style.display = '';
+        });
+      });
+
+      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
+      if (reactFlowElement) {
+        reactFlowElement.style.background = '';
+      }
+
+      const background = reactFlowWrapper.current.querySelector('.react-flow__background');
+      if (background) {
+        background.style.display = '';
+      }
+    }
+    setIsOpen(false);
+  };
+
+  const exportAsPDF = async () => {
+    if (!reactFlowWrapper.current || !reactFlowInstance) return;
+    
+    try {
+      // Store original viewport
+      const originalViewport = reactFlowInstance.getViewport();
+      
+      // Hide UI elements
+      const elementsToHide = [
+        '.react-flow__controls',
+        '.react-flow__minimap', 
+        '.react-flow__panel'
+      ];
+      
+      const hiddenElements = [];
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => {
+          hiddenElements.push({ element: el, display: el.style.display });
+          el.style.display = 'none';
+        });
+      });
+
+      // Store and set styles
+      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
+      const originalBg = reactFlowElement.style.background;
+      const background = reactFlowWrapper.current.querySelector('.react-flow__background');
+      const originalBackgroundDisplay = background ? background.style.display : '';
+
+      reactFlowElement.style.background = 'white';
       if (background) {
         background.style.display = 'none';
       }
@@ -144,23 +168,32 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
       // Fit view to show all nodes
       if (nodes.length > 0) {
         const nodesBounds = getNodesBounds(nodes);
+        const padding = 50;
         const { x, y, zoom } = getViewportForBounds(
-          nodesBounds,
-          reactFlowInstance.getViewport().zoom,
-          reactFlowInstance.getViewport().x,
-          reactFlowInstance.getViewport().y,
-          100
+          {
+            x: nodesBounds.x - padding,
+            y: nodesBounds.y - padding,
+            width: nodesBounds.width + padding * 2,
+            height: nodesBounds.height + padding * 2
+          },
+          reactFlowWrapper.current.offsetWidth,
+          reactFlowWrapper.current.offsetHeight,
+          0.5,
+          2
         );
-        reactFlowInstance.setViewport({ x, y, zoom });
-        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        reactFlowInstance.setViewport({ x, y, zoom }, { duration: 0 });
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
       const canvas = await html2canvas(reactFlowWrapper.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        width: reactFlowWrapper.current.offsetWidth,
+        height: reactFlowWrapper.current.offsetHeight,
         onclone: (clonedDoc) => {
           const clonedReactFlow = clonedDoc.querySelector('.react-flow');
           if (clonedReactFlow) {
@@ -177,50 +210,43 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
       const pdf = new jsPDF({
         orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
         unit: 'px',
-        format: [canvas.width, canvas.height]
+        format: [canvas.width / 3, canvas.height / 3] // Scale down for PDF
       });
       
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
       pdf.save(`${diagramTitle || 'diagram'}.pdf`);
+      
+      // Restore original viewport
+      reactFlowInstance.setViewport(originalViewport, { duration: 0 });
       
     } catch (error) {
       console.error('Error exporting PDF:', error);
       alert('Error exporting PDF. Please try again.');
     } finally {
-      // Restore elements
-      hiddenElements.forEach(({ element, display }) => {
-        element.style.display = display;
+      // Restore all elements
+      const elementsToHide = [
+        '.react-flow__controls',
+        '.react-flow__minimap', 
+        '.react-flow__panel'
+      ];
+      
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => {
+          el.style.display = '';
+        });
       });
 
       const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
       if (reactFlowElement) {
-        reactFlowElement.style.background = originalBg;
+        reactFlowElement.style.background = '';
       }
 
       const background = reactFlowWrapper.current.querySelector('.react-flow__background');
       if (background) {
-        background.style.display = originalBackgroundDisplay;
+        background.style.display = '';
       }
     }
-    setIsOpen(false);
-  };
-
-  const exportAsSVG = () => {
-    if (!nodes.length) {
-      alert('No nodes to export');
-      return;
-    }
-
-    const svg = createSVGFromNodes(nodes, edges);
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.download = `${diagramTitle || 'diagram'}.svg`;
-    link.href = url;
-    link.click();
-    
-    URL.revokeObjectURL(url);
     setIsOpen(false);
   };
 
@@ -228,6 +254,9 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
     if (!reactFlowWrapper.current || !reactFlowInstance) return;
     
     try {
+      // Store original viewport
+      const originalViewport = reactFlowInstance.getViewport();
+      
       // Hide UI elements
       const elementsToHide = [
         '.react-flow__controls',
@@ -247,10 +276,10 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
       // Set white background
       const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
       const originalBg = reactFlowElement.style.background;
-      reactFlowElement.style.background = 'white';
-
       const background = reactFlowWrapper.current.querySelector('.react-flow__background');
       const originalBackgroundDisplay = background ? background.style.display : '';
+
+      reactFlowElement.style.background = 'white';
       if (background) {
         background.style.display = 'none';
       }
@@ -258,23 +287,32 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
       // Fit view
       if (nodes.length > 0) {
         const nodesBounds = getNodesBounds(nodes);
+        const padding = 50;
         const { x, y, zoom } = getViewportForBounds(
-          nodesBounds,
-          reactFlowInstance.getViewport().zoom,
-          reactFlowInstance.getViewport().x,
-          reactFlowInstance.getViewport().y,
-          100
+          {
+            x: nodesBounds.x - padding,
+            y: nodesBounds.y - padding,
+            width: nodesBounds.width + padding * 2,
+            height: nodesBounds.height + padding * 2
+          },
+          reactFlowWrapper.current.offsetWidth,
+          reactFlowWrapper.current.offsetHeight,
+          0.5,
+          2
         );
-        reactFlowInstance.setViewport({ x, y, zoom });
-        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        reactFlowInstance.setViewport({ x, y, zoom }, { duration: 0 });
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
       const canvas = await html2canvas(reactFlowWrapper.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        width: reactFlowWrapper.current.offsetWidth,
+        height: reactFlowWrapper.current.offsetHeight,
         onclone: (clonedDoc) => {
           const clonedReactFlow = clonedDoc.querySelector('.react-flow');
           if (clonedReactFlow) {
@@ -297,168 +335,45 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
         }
       });
       
+      // Restore original viewport
+      reactFlowInstance.setViewport(originalViewport, { duration: 0 });
+      
     } catch (error) {
       console.error('Error copying to clipboard:', error);
       alert('Error copying to clipboard. Please try again.');
     } finally {
       // Restore elements
-      hiddenElements.forEach(({ element, display }) => {
-        element.style.display = display;
+      const elementsToHide = [
+        '.react-flow__controls',
+        '.react-flow__minimap', 
+        '.react-flow__panel'
+      ];
+      
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => {
+          el.style.display = '';
+        });
       });
 
       const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
       if (reactFlowElement) {
-        reactFlowElement.style.background = originalBg;
+        reactFlowElement.style.background = '';
       }
 
       const background = reactFlowWrapper.current.querySelector('.react-flow__background');
       if (background) {
-        background.style.display = originalBackgroundDisplay;
+        background.style.display = '';
       }
     }
     setIsOpen(false);
-  };
-
-  const createSVGFromNodes = (nodes, edges) => {
-    if (!nodes.length) return '<svg></svg>';
-    
-    // Calculate bounds with proper padding
-    const padding = 50;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
-    nodes.forEach(node => {
-      const nodeWidth = 200; // Default node width
-      const nodeHeight = 80; // Default node height
-      minX = Math.min(minX, node.position.x);
-      minY = Math.min(minY, node.position.y);
-      maxX = Math.max(maxX, node.position.x + nodeWidth);
-      maxY = Math.max(maxY, node.position.y + nodeHeight);
-    });
-    
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
-    
-    const width = maxX - minX;
-    const height = maxY - minY;
-    
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${width} ${height}" width="${width}" height="${height}">`;
-    
-    // Add white background
-    svg += `<rect x="${minX}" y="${minY}" width="${width}" height="${height}" fill="white"/>`;
-    
-    // Define arrow marker
-    svg += `
-      <defs>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
-                refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
-          <polygon points="0 0, 10 3.5, 0 7" fill="#6B7280"/>
-        </marker>
-      </defs>
-    `;
-    
-    // Add edges first (behind nodes)
-    edges.forEach(edge => {
-      const sourceNode = nodes.find(n => n.id === edge.source);
-      const targetNode = nodes.find(n => n.id === edge.target);
-      
-      if (sourceNode && targetNode) {
-        const x1 = sourceNode.position.x + 100; // Center of source node
-        const y1 = sourceNode.position.y + 80;  // Bottom of source node
-        const x2 = targetNode.position.x + 100; // Center of target node
-        const y2 = targetNode.position.y;       // Top of target node
-        
-        const strokeColor = edge.style?.stroke || '#6B7280';
-        const strokeWidth = edge.style?.strokeWidth || 2;
-        
-        svg += `
-          <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
-                stroke="${strokeColor}" stroke-width="${strokeWidth}" 
-                marker-end="url(#arrowhead)"/>
-        `;
-        
-        if (edge.label) {
-          const midX = (x1 + x2) / 2;
-          const midY = (y1 + y2) / 2;
-          svg += `
-            <text x="${midX}" y="${midY}" text-anchor="middle" 
-                  font-family="Arial" font-size="12" fill="#374151"
-                  dominant-baseline="middle">${edge.label}</text>
-          `;
-        }
-      }
-    });
-    
-    // Add nodes
-    nodes.forEach(node => {
-      const x = node.position.x;
-      const y = node.position.y;
-      const width = 200;
-      const height = 80;
-      
-      const backgroundColor = node.data.backgroundColor || '#F3F4F6';
-      const borderColor = node.data.borderColor || node.data.iconColor || '#D1D5DB';
-      const textColor = node.data.textColor || '#374151';
-      const iconColor = node.data.iconColor || '#6B7280';
-      const fontSize = node.data.fontSize || 14;
-      const fontFamily = node.data.fontFamily || 'Arial';
-      const shape = node.data.shape || 'rectangle';
-      
-      // Draw node based on shape
-      if (shape === 'circle') {
-        const centerX = x + width/2;
-        const centerY = y + height/2;
-        const radius = Math.min(width, height) / 2;
-        svg += `
-          <circle cx="${centerX}" cy="${centerY}" r="${radius}" 
-                  fill="${backgroundColor}" stroke="${borderColor}" stroke-width="2"/>
-        `;
-      } else if (shape === 'diamond') {
-        const centerX = x + width/2;
-        const centerY = y + height/2;
-        const halfWidth = width/2;
-        const halfHeight = height/2;
-        svg += `
-          <polygon points="${centerX},${y} ${x+width},${centerY} ${centerX},${y+height} ${x},${centerY}" 
-                   fill="${backgroundColor}" stroke="${borderColor}" stroke-width="2"/>
-        `;
-      } else {
-        // Rectangle or rounded rectangle
-        const rx = shape === 'rounded' ? 12 : shape === 'rectangle' ? 6 : 0;
-        svg += `
-          <rect x="${x}" y="${y}" width="${width}" height="${height}" 
-                fill="${backgroundColor}" stroke="${borderColor}" stroke-width="2" rx="${rx}"/>
-        `;
-      }
-      
-      // Add icon if present
-      if (node.data.icon) {
-        svg += `
-          <text x="${x + width/2}" y="${y + height/2 - 8}" text-anchor="middle" 
-                font-family="Arial" font-size="${Math.max(16, fontSize * 1.2)}" 
-                fill="${iconColor}" dominant-baseline="middle">${node.data.icon}</text>
-        `;
-      }
-      
-      // Add label
-      const labelY = node.data.icon ? y + height/2 + 12 : y + height/2;
-      svg += `
-        <text x="${x + width/2}" y="${labelY}" text-anchor="middle" 
-              font-family="${fontFamily}" font-size="${fontSize}" 
-              fill="${textColor}" dominant-baseline="middle">${node.data.label || node.id}</text>
-      `;
-    });
-    
-    svg += `</svg>`;
-    return svg;
   };
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
+        className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 flex items-center gap-2 text-gray-700 font-medium transition-colors"
       >
         <Download size={16} />
         Export
@@ -471,40 +386,32 @@ const ExportMenu = ({ reactFlowWrapper, nodes, edges, diagramTitle, reactFlowIns
             onClick={() => setIsOpen(false)}
           ></div>
           
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
-            <div className="py-2">
+          <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden">
+            <div className="py-1">
               <button
                 onClick={exportAsPNG}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors"
               >
-                <Image size={16} />
-                Export as PNG
-              </button>
-              
-              <button
-                onClick={exportAsSVG}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
-              >
-                <FileDown size={16} />
-                Export as SVG
+                <Image size={16} className="text-gray-500" />
+                <span className="font-medium">Export as PNG</span>
               </button>
               
               <button
                 onClick={exportAsPDF}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors"
               >
-                <FileDown size={16} />
-                Export as PDF
+                <FileDown size={16} className="text-gray-500" />
+                <span className="font-medium">Export as PDF</span>
               </button>
               
-              <hr className="my-2" />
+              <div className="border-t border-gray-100 my-1"></div>
               
               <button
                 onClick={copyToClipboard}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors"
               >
-                <Copy size={16} />
-                Copy to Clipboard
+                <Copy size={16} className="text-gray-500" />
+                <span className="font-medium">Copy to Clipboard</span>
               </button>
             </div>
           </div>
