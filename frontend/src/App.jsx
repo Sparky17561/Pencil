@@ -20,7 +20,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import ExportMenu from './components/ExportMenu';
 import LoadingSpinner from './components/LoadingSpinner';
-import NodeToolbar from './components/NodeToolBar';
+import NodeToolbar from './components/NodeToolbar';
 import NodeEditPanel from './components/NodeEditPanel';
 import EdgeEditPanel from './components/EdgeEditPanel';
 
