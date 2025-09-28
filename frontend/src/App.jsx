@@ -25,6 +25,9 @@ import NodeEditPanel from './components/NodeEditPanel';
 import EdgeEditPanel from './components/EdgeEditPanel';
 
 import './App.css';
+// BASE_URL automatically switches based on environment
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 const nodeTypes = {
   custom: CustomNode,
@@ -393,7 +396,7 @@ function App() {
 
     try {
       debugLog('Syncing diagram...');
-      const response = await fetch('http://localhost:8000/api/sync-diagram/', {
+      const response = await fetch('${BASE_URL}/api/sync-diagram/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nodes, edges, diagram_title: diagramTitle || 'My Diagram' }),
@@ -428,7 +431,7 @@ function App() {
     setIsLoading(true);
     debugLog('Generating diagram...', { prompt, model });
     try {
-      const generateResponse = await fetch('http://localhost:8000/api/generate-flowlang/', {
+      const generateResponse = await fetch('${BASE_URL}/api/generate-flowlang/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, api_key: apiKey, model })
@@ -436,7 +439,7 @@ function App() {
       const generateData = await generateResponse.json();
       if (!generateData.success) throw new Error(generateData.error);
 
-      const parseResponse = await fetch('http://localhost:8000/api/parse-flowlang/', {
+      const parseResponse = await fetch('${BASE_URL}/api/parse-flowlang/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ flowlang_code: generateData.flowlang_code })
@@ -463,7 +466,7 @@ function App() {
     debugLog('Updating code...');
     try {
       setAutoSync(false);
-      const parseResponse = await fetch('http://localhost:8000/api/parse-flowlang/', {
+      const parseResponse = await fetch('${BASE_URL}/api/parse-flowlang/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ flowlang_code: flowlangCode })
