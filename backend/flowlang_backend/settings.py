@@ -81,9 +81,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings (allow frontend on Render + local dev)
+# CORS settings - Updated for Vercel deployment
 CORS_ALLOWED_ORIGINS = [
-    os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    "https://pencil-eta.vercel.app",  # Your production Vercel domain
+    "http://localhost:5173",         # Local Vite dev server
+    "http://localhost:3000",         # Alternative local dev port
+    os.getenv("FRONTEND_URL", "https://pencil-eta.vercel.app")  # Environment variable for flexibility,
 ]
+
 CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework settings
