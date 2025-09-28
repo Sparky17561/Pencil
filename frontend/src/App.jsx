@@ -16,7 +16,7 @@ import 'reactflow/dist/style.css';
 
 import * as LucideIcons from 'lucide-react';
 
-const { Hand, MousePointer, HelpCircle, X, AlignLeft, Download, RefreshCw } = LucideIcons;
+const { Hand, MousePointer, HelpCircle, X, AlignLeft, Download, RefreshCw, Image, FileDown, Copy } = LucideIcons;
 import CustomNode from './components/CustomNode';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -29,7 +29,6 @@ import EdgeEditPanel from './components/EdgeEditPanel';
 import './App.css';
 // BASE_URL automatically switches based on environment
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 
 const nodeTypes = {
   custom: CustomNode,
@@ -63,6 +62,8 @@ function App() {
   const [panOnDrag, setPanOnDrag] = useState(false);
   const [copiedElements, setCopiedElements] = useState({ nodes: [], edges: [] });
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [syncTimeout, setSyncTimeout] = useState(null);
   const reactFlowWrapper = useRef(null);
 
   // Hide React Flow watermark on mount
@@ -132,7 +133,212 @@ function App() {
     debugLog(`Interaction mode changed to: ${newPanOnDrag ? 'Pan' : 'Select'}`);
   }, [panOnDrag]);
 
-  // ---- Auto-align utility ----
+  // ---- Export functions ----
+  const exportAsPNG = async () => {
+    if (!reactFlowWrapper.current || !reactFlowInstance) return;
+    
+    try {
+      const { getNodesBounds, getViewportForBounds } = await import('reactflow');
+      const html2canvas = await import('html2canvas');
+      
+      const originalViewport = reactFlowInstance.getViewport();
+      const viewport = reactFlowWrapper.current.querySelector('.react-flow__viewport');
+      if (!viewport) return;
+
+      const elementsToHide = ['.react-flow__controls', '.react-flow__minimap', '.react-flow__panel'];
+      const hiddenElements = [];
+      
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => {
+          hiddenElements.push({ element: el, display: el.style.display });
+          el.style.display = 'none';
+        });
+      });
+
+      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
+      const originalBg = reactFlowElement.style.background;
+      const background = reactFlowWrapper.current.querySelector('.react-flow__background');
+
+      reactFlowElement.style.background = 'white';
+      if (background) background.style.display = 'none';
+
+      if (nodes.length > 0) {
+        const nodesBounds = getNodesBounds(nodes);
+        const padding = 50;
+        const { x, y, zoom } = getViewportForBounds(
+          {
+            x: nodesBounds.x - padding,
+            y: nodesBounds.y - padding,
+            width: nodesBounds.width + padding * 2,
+            height: nodesBounds.height + padding * 2
+          },
+          reactFlowWrapper.current.offsetWidth,
+          reactFlowWrapper.current.offsetHeight,
+          0.5, 2
+        );
+        
+        reactFlowInstance.setViewport({ x, y, zoom }, { duration: 0 });
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      const canvas = await html2canvas.default(reactFlowWrapper.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${diagramTitle || 'diagram'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      reactFlowInstance.setViewport(originalViewport, { duration: 0 });
+      
+      // Restore elements
+      hiddenElements.forEach(({ element, display }) => {
+        element.style.display = display;
+      });
+      reactFlowElement.style.background = originalBg;
+      if (background) background.style.display = '';
+      
+    } catch (error) {
+      console.error('Error exporting PNG:', error);
+      alert('Error exporting PNG. Please try again.');
+    }
+  };
+
+  const exportAsPDF = async () => {
+    if (!reactFlowWrapper.current || !reactFlowInstance) return;
+    
+    try {
+      const { getNodesBounds, getViewportForBounds } = await import('reactflow');
+      const html2canvas = await import('html2canvas');
+      const jsPDF = await import('jspdf');
+      
+      const originalViewport = reactFlowInstance.getViewport();
+      const elementsToHide = ['.react-flow__controls', '.react-flow__minimap', '.react-flow__panel'];
+      const hiddenElements = [];
+      
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => {
+          hiddenElements.push({ element: el, display: el.style.display });
+          el.style.display = 'none';
+        });
+      });
+
+      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
+      const originalBg = reactFlowElement.style.background;
+      const background = reactFlowWrapper.current.querySelector('.react-flow__background');
+
+      reactFlowElement.style.background = 'white';
+      if (background) background.style.display = 'none';
+
+      if (nodes.length > 0) {
+        const nodesBounds = getNodesBounds(nodes);
+        const padding = 50;
+        const { x, y, zoom } = getViewportForBounds(
+          { x: nodesBounds.x - padding, y: nodesBounds.y - padding, width: nodesBounds.width + padding * 2, height: nodesBounds.height + padding * 2 },
+          reactFlowWrapper.current.offsetWidth, reactFlowWrapper.current.offsetHeight, 0.5, 2
+        );
+        
+        reactFlowInstance.setViewport({ x, y, zoom }, { duration: 0 });
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      const canvas = await html2canvas.default(reactFlowWrapper.current, {
+        backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF.jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`${diagramTitle || 'diagram'}.pdf`);
+      
+      reactFlowInstance.setViewport(originalViewport, { duration: 0 });
+      
+      // Restore elements
+      hiddenElements.forEach(({ element, display }) => element.style.display = display);
+      reactFlowElement.style.background = originalBg;
+      if (background) background.style.display = '';
+      
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Error exporting PDF. Please try again.');
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (!reactFlowWrapper.current || !reactFlowInstance) return;
+    
+    try {
+      const { getNodesBounds, getViewportForBounds } = await import('reactflow');
+      const html2canvas = await import('html2canvas');
+      
+      const originalViewport = reactFlowInstance.getViewport();
+      const elementsToHide = ['.react-flow__controls', '.react-flow__minimap', '.react-flow__panel'];
+      
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => el.style.display = 'none');
+      });
+
+      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow');
+      const background = reactFlowWrapper.current.querySelector('.react-flow__background');
+      const originalBg = reactFlowElement.style.background;
+
+      reactFlowElement.style.background = 'white';
+      if (background) background.style.display = 'none';
+
+      if (nodes.length > 0) {
+        const nodesBounds = getNodesBounds(nodes);
+        const padding = 50;
+        const { x, y, zoom } = getViewportForBounds(
+          { x: nodesBounds.x - padding, y: nodesBounds.y - padding, width: nodesBounds.width + padding * 2, height: nodesBounds.height + padding * 2 },
+          reactFlowWrapper.current.offsetWidth, reactFlowWrapper.current.offsetHeight, 0.5, 2
+        );
+        
+        reactFlowInstance.setViewport({ x, y, zoom }, { duration: 0 });
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      const canvas = await html2canvas.default(reactFlowWrapper.current, {
+        backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (navigator.clipboard && window.ClipboardItem) {
+          const item = new ClipboardItem({ 'image/png': blob });
+          await navigator.clipboard.write([item]);
+          alert('Diagram copied to clipboard!');
+        } else {
+          alert('Clipboard not supported in this browser');
+        }
+      });
+      
+      reactFlowInstance.setViewport(originalViewport, { duration: 0 });
+      
+      // Restore elements
+      elementsToHide.forEach(selector => {
+        const elements = reactFlowWrapper.current.querySelectorAll(selector);
+        elements.forEach(el => el.style.display = '');
+      });
+      reactFlowElement.style.background = originalBg;
+      if (background) background.style.display = '';
+      
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      alert('Error copying to clipboard. Please try again.');
+    }
+  };
+
   const autoAlignNodes = useCallback(() => {
     setNodes(prevNodes => {
       if (!prevNodes || prevNodes.length === 0) return prevNodes;
@@ -407,7 +613,7 @@ function App() {
     }
   }, [nodes]);
 
-  // ---- Sync & generation handlers ----
+  // ---- Improved Sync with proper debouncing ----
   const handleSyncDiagram = async () => {
     if (nodes.length === 0 && edges.length === 0) {
       setCurrentFlowLangCode('');
@@ -415,11 +621,17 @@ function App() {
     }
 
     try {
+      setIsLoading(true);
       debugLog('Syncing diagram...');
       const response = await fetch(`${BASE_URL}/api/sync-diagram/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodes, edges, diagram_title: diagramTitle || 'My Diagram' }),
+        body: JSON.stringify({ 
+          nodes, 
+          edges, 
+          diagram_title: diagramTitle || 'My Diagram',
+          user_id: user?.id || 'anonymous'
+        }),
       });
       const data = await response.json();
       if (data.success) {
@@ -430,13 +642,32 @@ function App() {
       }
     } catch (err) {
       debugLog('Error syncing diagram', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Debounced sync effect - 3 second delay
   useEffect(() => {
     if (autoSync && (nodes.length > 0 || edges.length > 0)) {
-      const timeoutId = setTimeout(() => handleSyncDiagram(), 1000);
-      return () => clearTimeout(timeoutId);
+      // Clear existing timeout
+      if (syncTimeout) {
+        clearTimeout(syncTimeout);
+      }
+      
+      // Set new timeout with 3 second delay
+      const timeoutId = setTimeout(() => {
+        handleSyncDiagram();
+      }, 3000);
+      
+      setSyncTimeout(timeoutId);
+      
+      // Cleanup
+      return () => {
+        if (syncTimeout) {
+          clearTimeout(syncTimeout);
+        }
+      };
     }
   }, [nodes, edges, diagramTitle, autoSync]);
 
@@ -518,53 +749,43 @@ function App() {
 
   // Instructions Modal Component
   const InstructionsModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">How to Use FlowLang Designer</h2>
-          <button
-            onClick={() => setShowInstructions(false)}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={() => setShowInstructions(false)}
+    >
+      <div 
+        className="bg-white rounded-xl p-6 max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl m-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Quick Start Guide</h2>
+          <p className="text-gray-600">Get started with FlowLang Designer in minutes</p>
         </div>
         
-        <div className="space-y-4 text-sm text-gray-600">
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Getting Started</h3>
-            <ul className="list-disc ml-4 space-y-1">
-              <li>Use the "Add Shape" button to create new nodes</li>
-              <li>Click and drag to connect nodes with edges</li>
-              <li>Click on nodes or edges to edit their properties</li>
-              <li>Use Auto Align to organize nodes systematically</li>
+        <div className="space-y-4 text-sm text-gray-600 mb-6">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-800 mb-2">🚀 Getting Started</h3>
+            <ul className="list-disc ml-4 space-y-1 text-blue-700">
+              <li>Click the purple "Add" button to create nodes</li>
+              <li>Drag from one node to another to connect them</li>
+              <li>Click nodes/edges to edit their properties</li>
             </ul>
           </div>
           
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Keyboard Shortcuts</h3>
-            <ul className="list-disc ml-4 space-y-1">
-              <li><kbd className="bg-gray-100 px-2 py-1 rounded text-xs">S</kbd> - Toggle between Pan and Select modes</li>
-              <li><kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl/Cmd + C</kbd> - Copy selected elements</li>
-              <li><kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl/Cmd + V</kbd> - Paste copied elements</li>
-              <li><kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Delete</kbd> - Delete selected elements</li>
-              <li><kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl/Cmd + A</kbd> - Auto align nodes</li>
-            </ul>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-green-800 mb-2">⌨️ Keyboard Shortcuts</h3>
+            <div className="grid grid-cols-2 gap-2 text-green-700">
+              <div><kbd className="bg-white px-2 py-1 rounded text-xs shadow">S</kbd> Toggle Pan/Select</div>
+              <div><kbd className="bg-white px-2 py-1 rounded text-xs shadow">Ctrl+C</kbd> Copy</div>
+              <div><kbd className="bg-white px-2 py-1 rounded text-xs shadow">Ctrl+V</kbd> Paste</div>
+              <div><kbd className="bg-white px-2 py-1 rounded text-xs shadow">Del</kbd> Delete</div>
+            </div>
           </div>
           
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Modes</h3>
-            <ul className="list-disc ml-4 space-y-1">
-              <li><strong>Select Mode:</strong> Click to select nodes/edges, drag to move</li>
-              <li><strong>Pan Mode:</strong> Click and drag to pan the canvas</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">AI Features</h3>
-            <ul className="list-disc ml-4 space-y-1">
-              <li>Use the sidebar to generate diagrams with AI</li>
-              <li>Edit the generated code in the Code Editor</li>
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-purple-800 mb-2">🤖 AI Features</h3>
+            <ul className="list-disc ml-4 space-y-1 text-purple-700">
+              <li>Use the right sidebar to generate diagrams with AI</li>
               <li>Auto-sync keeps your diagram and code synchronized</li>
             </ul>
           </div>
@@ -572,12 +793,68 @@ function App() {
         
         <button
           onClick={() => setShowInstructions(false)}
-          className="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg"
         >
-          Got it!
+          Got it, let's start! 🎉
         </button>
       </div>
     </div>
+  );
+
+  // Elegant Export Dropdown Component
+  const ExportDropdown = () => (
+    <>
+      <div 
+        className="fixed inset-0 z-10" 
+        onClick={() => setShowExportMenu(false)}
+      ></div>
+      
+      <div className="absolute bottom-full mb-2 left-0 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-200/60 z-20 overflow-hidden transition-all duration-200">
+        <div className="py-1.5">
+          <button
+            onClick={() => {
+              exportAsPNG();
+              setShowExportMenu(false);
+            }}
+            className="w-full px-4 py-3 text-left hover:bg-gray-50/80 flex items-center gap-3 text-gray-700 hover:text-gray-900 transition-all duration-200 text-sm font-medium border-b border-gray-100/60"
+          >
+            <Image size={16} className="text-blue-500" />
+            <div className="flex flex-col">
+              <span className="font-medium">Export as PNG</span>
+              <span className="text-xs text-gray-400 mt-0.5">High-quality image file</span>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => {
+              exportAsPDF();
+              setShowExportMenu(false);
+            }}
+            className="w-full px-4 py-3 text-left hover:bg-gray-50/80 flex items-center gap-3 text-gray-700 hover:text-gray-900 transition-all duration-200 text-sm font-medium border-b border-gray-100/60"
+          >
+            <FileDown size={16} className="text-red-400" />
+            <div className="flex flex-col">
+              <span className="font-medium">Export as PDF</span>
+              <span className="text-xs text-gray-400 mt-0.5">Vector document</span>
+            </div>
+          </button>
+                                                        
+          <button
+            onClick={() => {
+              copyToClipboard();
+              setShowExportMenu(false);
+            }}
+            className="w-full px-4 py-3 text-left hover:bg-gray-50/80 flex items-center gap-3 text-gray-700 hover:text-gray-900 transition-all duration-200 text-sm font-medium"
+          >
+            <Copy size={16} className="text-green-500" />
+            <div className="flex flex-col">
+              <span className="font-medium">Copy to Clipboard</span>
+              <span className="text-xs text-gray-400 mt-0.5">Paste anywhere</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </>
   );
 
   if (!isLoaded) {
@@ -753,12 +1030,15 @@ function App() {
                     </button>
                     
                     <button
-                      onClick={() => document.querySelector('.export-menu-trigger')?.click()}
-                      className="group flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-100 to-sky-100 text-blue-700 hover:from-blue-200 hover:to-sky-200 border border-blue-200/70 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                      onClick={() => setShowExportMenu(!showExportMenu)}
+                      className="group flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-100 to-sky-100 text-blue-700 hover:from-blue-200 hover:to-sky-200 border border-blue-200/70 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5 relative"
                       title="Export diagram"
                     >
                       <Download size={14} />
                       <span>Export</span>
+                      
+                      {/* Elegant Export Dropdown */}
+                      {showExportMenu && <ExportDropdown />}
                     </button>
                     
                     <button
