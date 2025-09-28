@@ -3,6 +3,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// Read env variables from process.env
+const API_BASE_URL = process.env.VITE_API_BASE_URL
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -10,7 +16,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: import.meta.env.VITE_API_BASE_URL,
+        target: API_BASE_URL || 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       }
@@ -20,4 +26,4 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   }
-});
+})
