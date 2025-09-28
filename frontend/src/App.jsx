@@ -65,6 +65,24 @@ function App() {
   const [showInstructions, setShowInstructions] = useState(false);
   const reactFlowWrapper = useRef(null);
 
+  // Hide React Flow watermark on mount
+  useEffect(() => {
+    const hideWatermark = () => {
+      const attribution = document.querySelector('.react-flow__attribution');
+      if (attribution) {
+        attribution.style.display = 'none';
+      }
+    };
+    
+    // Hide immediately if already rendered
+    hideWatermark();
+    
+    // Also hide after a short delay in case it renders later
+    const timeoutId = setTimeout(hideWatermark, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   // ---- Helpers to style default nodes ----
   const getDefaultIcon = (type) => {
     switch (type) {
@@ -598,13 +616,14 @@ function App() {
         ) : null}
 
         {/* Main Canvas Area */}
-        <div className="flex-1 relative p-4">
+        <div className="flex-1 relative p-4" style={{ paddingBottom: '20px' }}>
           <div 
             ref={reactFlowWrapper} 
             className="h-full w-full bg-white rounded-2xl shadow-xl border border-gray-200/50 transition-all duration-300"
             style={{ 
               cursor: panOnDrag ? 'grab' : 'default',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.08), 0 2px 10px rgba(0,0,0,0.03)'
+              boxShadow: '0 10px 40px rgba(0,0,0,0.08), 0 2px 10px rgba(0,0,0,0.03)',
+              minHeight: 'calc(100vh - 120px)'
             }}
           >
             <ReactFlow
@@ -630,6 +649,7 @@ function App() {
               nodesDraggable={!panOnDrag}
               nodesConnectable={!panOnDrag}
               elementsSelectable={!panOnDrag}
+              proOptions={{ hideAttribution: true }}
               style={{
                 cursor: panOnDrag ? 'grab' : 'default'
               }}
@@ -662,51 +682,6 @@ function App() {
                 className="opacity-40 transition-opacity duration-300"
               />
 
-              {/* Enhanced Toolbar Panel */}
-              <Panel position="top-left" style={{ top: '20px', left: '20px' }}>
-                <div className="flex flex-col gap-3">
-                  <NodeToolbar onAddNode={addNode} onClearCanvas={clearCanvas} />
-                  
-                  {/* Enhanced Interaction Controls */}
-                  <div className="bg-white/95 backdrop-blur-sm px-4 py-3 rounded-xl shadow-lg border border-gray-200/70 flex flex-col gap-3 transition-all duration-300">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={toggleInteractionMode}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 flex-1 ${
-                          panOnDrag 
-                            ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
-                        }`}
-                        title={panOnDrag ? 'Pan Mode (Press S to toggle)' : 'Select Mode (Press S to toggle)'}
-                      >
-                        {panOnDrag ? <Hand size={16} /> : <MousePointer size={16} />}
-                        <span className="text-sm font-medium">{panOnDrag ? 'Pan' : 'Select'}</span>
-                      </button>
-                      
-                      <button
-                        onClick={autoAlignNodes}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200 transition-all duration-200"
-                        title="Auto align nodes (Ctrl/Cmd + A)"
-                      >
-                        <AlignLeft size={16} />
-                        <span className="text-sm font-medium">Align</span>
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setShowInstructions(true)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 transition-all duration-200 flex-1"
-                        title="Show instructions"
-                      >
-                        <HelpCircle size={16} />
-                        <span className="text-sm font-medium">Help</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </Panel>
-
               {/* Enhanced Title Panel */}
               {diagramTitle && (
                 <Panel position="top-center">
@@ -723,47 +698,78 @@ function App() {
                 </Panel>
               )}
 
-              {/* Enhanced Bottom Panel with Export and Sync */}
-              <Panel position="bottom-center">
-                <div className="bg-white/90 backdrop-blur-sm px-4 py-3 rounded-xl shadow-lg border border-gray-200/70 transition-all duration-300">
-                  <div className="flex items-center gap-4">
-                    {/* Export Button */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => document.querySelector('.export-menu-trigger')?.click()}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 transition-all duration-200"
-                        title="Export diagram"
-                      >
-                        <Download size={16} />
-                        <span className="text-sm font-medium">Export</span>
-                      </button>
-                    </div>
+              {/* Compact Bottom Control Panel */}
+              <Panel position="bottom-center" style={{ bottom: '20px' }}>
+                <div className="bg-white/98 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-gray-200/60 transition-all duration-300"
+                     style={{
+                       boxShadow: '0 10px 30px rgba(0,0,0,0.08), 0 4px 15px rgba(0,0,0,0.04)',
+                       background: 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.95))'
+                     }}>
+                  <div className="flex items-center gap-2">
+                    
+                    {/* Add Button */}
+                    <button
+                      onClick={() => addNode('note', 'rectangle')}
+                      className="group flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 hover:from-purple-200 hover:to-violet-200 border border-purple-200/70 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                      title="Add Note Node"
+                    >
+                      <span className="text-base font-semibold">+</span>
+                      <span>Add</span>
+                    </button>
 
-                    {/* Sync Status */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleManualSync}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 transition-all duration-200"
-                        title="Manual sync"
-                      >
-                        <RefreshCw size={16} className={autoSync ? "animate-spin" : ""} />
-                        <span className="text-sm font-medium">
-                          {autoSync ? "Auto Sync" : "Manual Sync"}
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Quick Stats */}
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">Nodes:</span>
-                        <span className="bg-gray-100 px-2 py-1 rounded">{nodes.length}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">Edges:</span>
-                        <span className="bg-gray-100 px-2 py-1 rounded">{edges.length}</span>
-                      </div>
-                    </div>
+                    {/* Divider */}
+                    <div className="h-6 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+                    
+                    {/* Control Buttons */}
+                    <button
+                      onClick={clearCanvas}
+                      className="group flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-red-100 to-rose-100 text-red-700 hover:from-red-200 hover:to-rose-200 border border-red-200/70 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                      title="Clear Canvas"
+                    >
+                      <X size={14} />
+                      <span>Clear</span>
+                    </button>
+                    
+                    <button
+                      onClick={toggleInteractionMode}
+                      className={`group flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5 ${
+                        panOnDrag 
+                          ? 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 border border-blue-200/70' 
+                          : 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 hover:from-gray-200 hover:to-slate-200 border border-gray-200/70'
+                      }`}
+                      title={panOnDrag ? 'Pan Mode (Press S to toggle)' : 'Select Mode (Press S to toggle)'}
+                    >
+                      {panOnDrag ? <Hand size={14} /> : <MousePointer size={14} />}
+                      <span>{panOnDrag ? 'Pan' : 'Select'}</span>
+                    </button>
+                    
+                    <button
+                      onClick={autoAlignNodes}
+                      className="group flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-100 to-fuchsia-100 text-purple-700 hover:from-purple-200 hover:to-fuchsia-200 border border-purple-200/70 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                      title="Auto align nodes (Ctrl/Cmd + A)"
+                    >
+                      <AlignLeft size={14} />
+                      <span>Align</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => document.querySelector('.export-menu-trigger')?.click()}
+                      className="group flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-100 to-sky-100 text-blue-700 hover:from-blue-200 hover:to-sky-200 border border-blue-200/70 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                      title="Export diagram"
+                    >
+                      <Download size={14} />
+                      <span>Export</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowInstructions(true)}
+                      className="group flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-green-100 to-teal-100 text-green-700 hover:from-green-200 hover:to-teal-200 border border-green-200/70 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                      title="Show instructions"
+                    >
+                      <HelpCircle size={14} />
+                      <span>Help</span>
+                    </button>
+                    
                   </div>
                 </div>
               </Panel>
